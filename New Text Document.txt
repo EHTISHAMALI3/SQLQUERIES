@@ -1,0 +1,60 @@
+
+create table HY_Tbl_ContentlabelInfo(
+id int primary key identity(1,1),
+labelDetails varchar(max),
+labelUsedFor varchar(max),
+ImgpathIfExists varchar(max),
+created_by varchar(255),
+created_date datetime,
+modified_by varchar(255),
+modified_date datetime,
+deleted bit default 0,
+Source varchar(255) not null
+)
+
+
+select * from sys.tables
+
+
+SELECT * FROM USERS;
+
+select * from BGS_HA_TBL_Application_Sessions
+select * from BGS_HA_TBL_Application_Schools
+select * from BGS_HA_TBL_Application_class
+select * from UserTypes
+
+
+select top 1 id from users order by id desc
+--insert into BGS_HA_TBL_Application_Schools
+--values('Bagh Grammar School','District bagh, AJK','Mahmood-ul-haq','logo.png','BGS-tech-Admin',getdate(),null,null,0)
+
+--insert into BGS_HA_TBL_Application_Sessions
+--values('2024-2025','BGS-tech-Admin',1,getdate(),DATEADD(YEAR, 1, GETDATE()),getdate(),null,null,0)
+
+--insert into BGS_HA_TBL_Application_class
+--values('Group 1','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+
+--insert into BGS_HA_TBL_Application_class
+--values('Group 2','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 3','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 4','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 5','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 6','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 7','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 8','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 9','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+--insert into BGS_HA_TBL_Application_class
+--values('Group 10','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
+
+insert into UserTypes
+values('LimitedAdmin','BGS-tech-Admin', GETDATE(),null,null,0)
+
+ALTER TABLE UserTypes 
+ALTER COLUMN UserType VARCHAR(255);
