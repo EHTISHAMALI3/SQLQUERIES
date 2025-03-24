@@ -1,0 +1,279 @@
+CREATE procedure check_login_details        
+
+(@username nvarchar(max))        
+
+as        
+
+begin        
+
+  select Login_Failed_Count,Captcha_Valid_Count,Captcha_Invalid_Count,show_captcha from Login_Attemps_Record        
+
+  where USER_ID=@username and isnull(deleted,0)=0        
+
+end
+ 
+CREATE PROCedure IS_ACCOUNT_LOCKED --'1001'                      
+
+(                      
+
+@employee_ID VARCHAR(75)                      
+
+)                      
+
+AS                     
+
+BEGIN                    
+
+    --SELECT LAST_LOGIN_DATE FROM BGS_Tbl_Users              
+
+--declare @USER_ID varchar(10)='1001'                  
+
+declare @curr_time int= (SELECT DATEPART(HOUR,GETDATE())*60+DATEPART(MINUTE,GETDATE()) FROM BGS_Tbl_Users WHERE employee_id=@employee_ID)    
+
+--select @curr_time as currentTime                     
+
+declare @last_login_time int= (SELECT DATEPART(HOUR,LAST_LOGIN_DATE)*60+DATEPART(MINUTE,LAST_LOGIN_DATE) FROM BGS_Tbl_Users WHERE employee_id=@employee_ID and convert(varchar,GETDATE(),101)=CONVERT(varchar,LAST_LOGIN_DATE,101) and IS_LOCKED_OUT=1)        
+
+--select @last_login_time  as Last_Login_Time    
+
+if(@curr_time-@last_login_time < 60)                      
+
+begin                       
+
+select '1'                      
+
+end                      
+
+else                      
+
+begin              
+
+  --declare @USER_ID varchar(10)='1001'        
+
+declare @invalid_Count int=(select Login_Failed_Count from Login_Attemps_Record where User_Id=@employee_ID)    
+
+--select       @invalid_Count  as Login_Failed_Count    
+
+if(@invalid_Count>=5)          
+
+begin           
+
+select '0'        
+
+end          
+
+--else          
+
+--begin           
+
+--update Login_Attemps_Record set Login_Failed_Count=0,            
+
+--Captcha_Valid_Count=0,Captcha_Invalid_Count=0,show_captcha=0            
+
+--where User_Id=@USER_ID              
+
+--select '0'                      
+
+--end          
+
+end                      
+
+ENd
+ 
+CREATE PROCEDURE INSERT_INVALID_ENTRY            
+
+(            
+
+@Username VARCHAR(255)            
+
+)            
+
+AS            
+
+BEGIN            
+
+DECLARE @EMPLOYEE_ID VARCHAR(75) = (SELECT top 1 employee_id FROM BGS_Tbl_Users WHERE USER_ID=@Username)            
+
+
+IF EXISTS(SELECT * FROM User_Login_Details WHERE username=@Username)            
+
+BEGIN            
+
+UPDATE User_Login_Details            
+
+set Last_Login_Date=GETDATE(),            
+
+Invalid_Login_Count=Invalid_Login_Count+1,            
+
+Modified_By=@Username,            
+
+Modified_Date=GETDATE()            
+
+where username=@Username            
+
+END            
+
+ELSE            
+
+BEGIN      
+
+IF @EMPLOYEE_ID IS NULL    
+
+BEGIN    
+
+-- Generate a new EMPLOYEE_ID that does not exist in User_Login_Details    
+
+    DECLARE @New_EMPLOYEE_ID VARCHAR(75);    
+
+    SET @New_EMPLOYEE_ID = (SELECT TOP 1 NEWID() AS NewID FROM sysobjects WHERE id = object_id('User_Login_Details') AND NEWID() NOT IN (SELECT employee_id FROM User_Login_Details));    
+
+INSERT INTO User_Login_Details(Employee_ID,username,Last_Login_Date,Invalid_Login_Count,Login_Status,Application_Name,Deleted,Created_By,Created_Date)            
+
+VALUES (@New_EMPLOYEE_ID,@Username,GETDATE(),1,'FAILURE','Bus Tracking System',0,'BGS-IT/ADMIN',GETDATE())            
+
+End    
+
+END            
+
+
+SELECT 'SUCCESS'            
+
+
+END
+ 
+create procedure Get_InValid_UserAttempt_Record    
+
+@Username VARCHAR(255)      
+
+as    
+
+begin     
+
+select * from User_Login_Details where username=@Username and isnull(deleted,0) =0  
+
+end
+ 
+  
+
+create procedure Get_Check_InValid_User_LOCK    
+
+@employee_ID nvarchar(255)    
+
+as    
+
+begin    
+
+declare @curr_time int= (SELECT DATEPART(HOUR,GETDATE())*60+DATEPART(MINUTE,GETDATE()) FROM User_Login_Details WHERE Employee_ID=@employee_ID)      
+
+--select @curr_time as currentTime                       
+
+declare @last_login_time int= (SELECT DATEPART(HOUR,LAST_LOGIN_DATE)*60+DATEPART(MINUTE,LAST_LOGIN_DATE) FROM User_Login_Details WHERE Employee_ID=@employee_ID and convert(varchar,GETDATE(),101)=CONVERT(varchar,LAST_LOGIN_DATE,101) and IS_LOCKED_OUT=1)   
+
+
+--select @last_login_time  as Last_Login_Time      
+
+if(@curr_time-@last_login_time < 60)                        
+
+begin                         
+
+select '1'                        
+
+end                        
+
+end  
+
+ 
+  
+
+CREATE procedure InValid_User_LOCK_ACCOUNT    
+
+@employee_ID nvarchar(255)    
+
+as    
+
+begin    
+
+update User_Login_Details    
+
+set IS_LOCKED_OUT=1    
+
+where Employee_ID=@employee_ID    
+
+--SELECT 'SUCCESS'      
+
+end
+ 
+  
+
+CREATE procedure update_login_details        
+
+(@emp_id varchar(75),        
+
+@Login_Failed_Count int,        
+
+@Captcha_Valid_Count int,        
+
+@Captcha_Invalid_Count int,        
+
+@show_captcha bit        
+
+)        
+
+as        
+
+begin        
+
+  if exists(select top 1 * from Login_Attemps_Record where User_Id=@emp_id)        
+
+  begin        
+
+  update Login_Attemps_Record set Login_Failed_Count=@Login_Failed_Count,Captcha_Valid_Count=@Captcha_Valid_Count,Captcha_Invalid_Count=@Captcha_Invalid_Count,show_captcha=@show_captcha,ModifiedBy=@emp_id,ModifiedAt=getdate()    
+
+  where USER_ID=@emp_id        
+
+  if(@@ROWCOUNT>0)        
+
+  select 'true'        
+
+  end        
+
+  else        
+
+  begin        
+
+  insert into Login_Attemps_Record(User_Id,Login_Failed_Count,Captcha_Valid_Count,Captcha_Invalid_Count,show_captcha,createdBy,createdAt,Deleted)        
+
+  values        
+
+  (@emp_id,@Login_Failed_Count,@Captcha_Valid_Count,@Captcha_Invalid_Count,@show_captcha,@emp_id,getdate(),0)        
+
+  select 'true'        
+
+
+  end        
+
+
+end
+ 
+CREATE PROC LOCK_ACCOUNT          
+
+(          
+
+@employee_ID VARCHAR(75)          
+
+)          
+
+AS          
+
+BEGIN          
+
+UPDATE BGS_Tbl_Users           
+
+SET LAST_LOGIN_DATE=GETDATE(), IS_LOCKED_OUT=1          
+
+WHERE employee_id=@employee_ID          
+
+select convert (bit, 1)          
+
+END
+ 
