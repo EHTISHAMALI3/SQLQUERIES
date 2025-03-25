@@ -1,60 +1,137 @@
+select *from sys.procedures;
+/*  done  */
 
-create table HY_Tbl_ContentlabelInfo(
-id int primary key identity(1,1),
-labelDetails varchar(max),
-labelUsedFor varchar(max),
-ImgpathIfExists varchar(max),
-created_by varchar(255),
-created_date datetime,
-modified_by varchar(255),
-modified_date datetime,
-deleted bit default 0,
-Source varchar(255) not null
-)
+go
+sp_helptext UpdateLoginTime
+
+create procedure UpdateLoginTime  
+@rollno varchar(25),  
+@CurrentTime DateTime  
+as  
+begin  
+  
+UPDATE users  
+SET LastLoginDate = @CurrentTime  
+WHERE RollNo = @rollno;  
+  
+end
+go
+
+/*  done  */
+sp_helptext UN_LOCK_ACCOUNT
+
+CREATE PROC UN_LOCK_ACCOUNT      
+(      
+@USER_ID VARCHAR(10)      
+)      
+AS      
+BEGIN      
+UPDATE USERS       
+SET LastLoginDate=GETDATE(), IsLockedOut=0      
+WHERE RollNo=@USER_ID      
+      
+select convert (bit, 1)      
+END
+go
+sp_helptext insertprocedure
+
+/*    Not Done    */
+CREATE PROCEDURE insertprocedure  
+(  
+  @rollNo nvarchar(255),  
+  @userTypeId int,  
+  @username varchar(255),  
+  @firstName varchar(255),  
+  @lastName varchar(255),  
+  @groupId int  
+)  
+AS  
+BEGIN  
+  -- Check if a record with the same rollNo exists today  
+  IF NOT EXISTS (  
+    SELECT 1  
+    FROM TBL_LOGIN_LOG  
+    WHERE rollNo = @rollNo  
+      AND CONVERT(date, Created_Date) = CONVERT(date, GETDATE())  
+  )  
+  BEGIN  
+  
+    -- Insert into TBL_LOGIN_LOG  
+    INSERT INTO TBL_LOGIN_LOG (RollNo,UserTypeId,Username,Firstname,Lastname,groupId,Created_Date,Created_By,Modified_Date,Modified_By,RoleId)  
+    VALUES (@rollNo, @userTypeId, @username, @firstName, @lastName, @groupId, GETDATE(), @username, GETDATE(), @username,(select top 1 roleId from UserRoles where RollNo=@rollNo))  
+  END  
+  ELSE  
+  BEGIN  
+    UPDATE TBL_LOGIN_LOG SET Modified_By= @username, Modified_Date= GETDATE(),RoleId=(select top 1 roleId from UserRoles where RollNo=@rollNo) WHERE RollNo= @rollNo AND CONVERT(DATE,Created_Date)= CONVERT(DATE,GETDATE())   
+  END  
+END  
+go
+sp_helptext InValid_User_LOCK_ACCOUNT
+
+/*   Not Done   */
+  
+CREATE procedure InValid_User_LOCK_ACCOUNT  
+@USER_ID nvarchar(255)  
+as  
+begin  
+ update User_Login_Details  
+ set IS_LOCKED_OUT=1  
+ where Employee_ID=@USER_ID  
+  
+ --SELECT 'SUCCESS'    
+end
+go
+sp_helptext Get_Check_InValid_User_LOCK
+
+/*   done */
+create procedure Get_Check_InValid_User_LOCK  
+@USER_ID nvarchar(255)  
+as  
+begin  
+  
+ declare @curr_time int= (SELECT DATEPART(HOUR,GETDATE())*60+DATEPART(MINUTE,GETDATE()) FROM User_Login_Details WHERE Employee_ID=@USER_ID)    
+--select @curr_time as currentTime                     
+declare @last_login_time int= (SELECT DATEPART(HOUR,LAST_LOGIN_DATE)*60+DATEPART(MINUTE,LAST_LOGIN_DATE) FROM User_Login_Details WHERE Employee_ID=@USER_ID and convert(varchar,GETDATE(),101)=CONVERT(varchar,LAST_LOGIN_DATE,101) and IS_LOCKED_OUT=1)       
+               
+--select @last_login_time  as Last_Login_Time    
+if(@curr_time-@last_login_time < 60)                      
+begin                       
+select '1'                      
+end                      
+end
+go
+sp_helptext Get_InValid_UserAttempt_Record
 
 
-select * from sys.tables
+/*  Not done     */
+create procedure Get_InValid_UserAttempt_Record  
+@USER_ID VARCHAR(255)    
+as  
+begin   
+ select * from User_Login_Details where username=@USER_ID  
 
 
-SELECT * FROM USERS;
-
-select * from BGS_HA_TBL_Application_Sessions
-select * from BGS_HA_TBL_Application_Schools
-select * from BGS_HA_TBL_Application_class
-select * from UserTypes
 
 
-select top 1 id from users order by id desc
---insert into BGS_HA_TBL_Application_Schools
---values('Bagh Grammar School','District bagh, AJK','Mahmood-ul-haq','logo.png','BGS-tech-Admin',getdate(),null,null,0)
+ Get_InValid_UserAttempt_Record
+ Get_Check_InValid_User_LOCK
+ InValid_User_LOCK_ACCOUNT
+ insertprocedure
+ UN_LOCK_ACCOUNT
+ UpdateLoginTime
 
---insert into BGS_HA_TBL_Application_Sessions
---values('2024-2025','BGS-tech-Admin',1,getdate(),DATEADD(YEAR, 1, GETDATE()),getdate(),null,null,0)
 
---insert into BGS_HA_TBL_Application_class
---values('Group 1','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
 
---insert into BGS_HA_TBL_Application_class
---values('Group 2','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 3','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 4','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 5','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 6','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 7','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 8','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 9','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
---insert into BGS_HA_TBL_Application_class
---values('Group 10','abc','0312351233','BGS-tech-Admin',getdate(),null,null,0,null,555)
 
-insert into UserTypes
-values('LimitedAdmin','BGS-tech-Admin', GETDATE(),null,null,0)
+ LOCK_ACCOUNT
+ update_login_details
+ INSERT_INVALID_ENTRY
+ IS_ACCOUNT_LOCKED
+ check_login_details
 
-ALTER TABLE UserTypes 
-ALTER COLUMN UserType VARCHAR(255);
+ EXEC Get_InValid_UserAttempt_Record @USER_ID = 'your_username';
+
+
+ drop procedure Get_InValid_UserAttempt_Record 
+
+ select *from sys.procedures;
