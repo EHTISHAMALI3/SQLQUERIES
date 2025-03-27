@@ -135,3 +135,13 @@ begin
  drop procedure Get_InValid_UserAttempt_Record 
 
  select *from sys.procedures;
+
+
+
+CREATE TABLE UserClaims (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    RollNo NVARCHAR(450) NOT NULL,
+    ClaimType NVARCHAR(MAX) NULL,
+    ClaimValue NVARCHAR(MAX) NULL,
+    CONSTRAINT FK_UserClaims_Users FOREIGN KEY (RollNo) REFERENCES Users(Id) ON DELETE CASCADE
+);
