@@ -1,0 +1,171 @@
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { tap, map } from 'rxjs/operators';
+import { Subject,Observable, BehaviorSubject  } from 'rxjs';
+
+import { CurrentEnvironment } from '../../constants/current-environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class GenericService {
+  loading: boolean = false;
+  private loginTextSubject = new Subject<string>();
+   // Create a private BehaviorSubject to hold the value of allLessonsCompleted
+   private allLessonsCompletedSubject = new BehaviorSubject<boolean>(false); // Initial value is false
+
+  httpOptions = { headers: new HttpHeaders({ 'Content-Type': 'application/json' }) }
+  private baseUrl: string;
+  private currentEnvironment: CurrentEnvironment;
+  // Observable to allow other components to subscribe to the state
+  allLessonsCompleted$ = this.allLessonsCompletedSubject.asObservable();
+  constructor(private http: HttpClient) {
+    this.currentEnvironment = new CurrentEnvironment();
+    this.baseUrl = this.currentEnvironment.getConnection() + "api/";
+  }
+
+  public GetData(url: string, completeURLProvided: boolean = false) {
+    url = completeURLProvided ? url : this.baseUrl + url;
+    return this.http.get<any>(url);
+  }
+  //return this.http.post(this.baseUrl + '/RefreshToken', token, this.httpOptions);
+  public PostData<T>(url: string, data: any) {
+    this.loading = true;
+    return this.http.post<T>(this.baseUrl + url, data)
+      .pipe(
+        tap(data => {
+          this.loading = false;
+          return data;
+
+        },
+          error => { 
+            this.loading = false;
+            return error; },
+          () => {
+            this.loading = false; // Set loading to false after the API call is complete
+          }
+        )
+
+      );
+  }
+
+
+  public PostDataGenerateImg<T>(url: string, data: any) {
+    this.loading = true;
+    return this.http.post<T>(url, data)
+      .pipe(
+        tap(data => {
+          this.loading = false;
+          return data;
+
+        },
+          error => { 
+            this.loading = false;
+            return error; },
+          () => {
+            this.loading = false; // Set loading to false after the API call is complete
+          }
+        )
+
+      );
+  }
+
+  public PostanalyseData<T>(url: string, data: any) {
+    this.loading = true;
+    return this.http.post<T>(url, data)
+      .pipe(
+        tap(data => {
+          this.loading = false;
+          return data;
+
+        },
+          error => { 
+            this.loading = false;
+            return error; },
+          () => {
+            this.loading = false; // Set loading to false after the API call is complete
+          }
+        )
+
+      );
+  }
+
+  public PostDataAddScore<T>(url: string, data: any) {
+    return this.http.post<T>(this.baseUrl + url, data)
+      .pipe(
+        tap(data => {
+          return data;
+        },
+          error => { 
+            this.loading = false;
+            return error; },
+        )
+
+      );
+  }
+  public GetDataWOParam1<T>(url: string): Observable<T> {
+    return this.http.get<T>(url);
+  }
+
+  public DeleteData<T>(url: string, data: any) {
+    return this.http.put<T>(this.baseUrl + url, data)
+      .pipe(
+        tap(data => {
+          return data;
+        },
+          error => { 
+            this.loading = false;
+            return error; }
+        )
+      );
+  }
+
+  public GetDataWOParam<T>(url: string) {
+    return this.http.get<T>(this.baseUrl + url)
+      .pipe(
+        tap(data => {
+          return data;
+          this.loading = false;
+        },
+          error => { 
+            this.loading = false;
+            return error; }
+        )
+      );
+  }
+
+  public GetDataWOParamQuransrv<T>(url: string): Observable<T> {
+    return this.http.get<T>(url)
+      .pipe(
+        tap(data => {
+          this.loading = false;
+          return data;
+          
+        },
+          error => { 
+            this.loading = false;
+            return error;
+           }
+        )
+      );
+  }
+
+
+
+  loginTextChanged$ = this.loginTextSubject.asObservable();
+
+  setLoginText(loginText: string) {
+    this.loginTextSubject.next(loginText);
+  }
+
+
+  // Method to set the value of allLessonsCompleted
+  setAllLessonsCompleted(value: boolean): void {
+    this.allLessonsCompletedSubject.next(value);
+  }
+
+  // Method to get the current value of allLessonsCompleted
+  getAllLessonsCompleted(): boolean {
+    return this.allLessonsCompletedSubject.getValue();
+  }
+}
