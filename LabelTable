@@ -1,0 +1,12 @@
+create table HY_Tbl_ContentlabelInfo(
+id int primary key identity(1,1),
+labelDetails varchar(max),
+labelUsedFor varchar(max),
+ImgpathIfExists varchar(max),
+created_by varchar(255),
+created_date datetime,
+modified_by varchar(255),
+modified_date datetime,
+deleted bit default 0,
+Source varchar(255) not null
+)
