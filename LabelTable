@@ -10,3 +10,5 @@ modified_date datetime,
 deleted bit default 0,
 Source varchar(255) not null
 )
+https://www.figma.com/design/Xd0GxsVXqmys0gVYs7J1ko/Hidayah?node-id=13-596
+ 
