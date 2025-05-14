@@ -1,147 +1,384 @@
-select *from sys.procedures;
-/*  done  */
-
-go
-sp_helptext UpdateLoginTime
-
-create procedure UpdateLoginTime  
-@rollno varchar(25),  
-@CurrentTime DateTime  
-as  
-begin  
-  
-UPDATE users  
-SET LastLoginDate = @CurrentTime  
-WHERE RollNo = @rollno;  
-  
-end
-go
-
-/*  done  */
-sp_helptext UN_LOCK_ACCOUNT
-
-CREATE PROC UN_LOCK_ACCOUNT      
-(      
-@USER_ID VARCHAR(10)      
-)      
-AS      
-BEGIN      
-UPDATE USERS       
-SET LastLoginDate=GETDATE(), IsLockedOut=0      
-WHERE RollNo=@USER_ID      
-      
-select convert (bit, 1)      
-END
-go
-sp_helptext insertprocedure
-
-/*    Not Done    */
-CREATE PROCEDURE insertprocedure  
-(  
-  @rollNo nvarchar(255),  
-  @userTypeId int,  
-  @username varchar(255),  
-  @firstName varchar(255),  
-  @lastName varchar(255),  
-  @groupId int  
-)  
-AS  
-BEGIN  
-  -- Check if a record with the same rollNo exists today  
-  IF NOT EXISTS (  
-    SELECT 1  
-    FROM TBL_LOGIN_LOG  
-    WHERE rollNo = @rollNo  
-      AND CONVERT(date, Created_Date) = CONVERT(date, GETDATE())  
-  )  
-  BEGIN  
-  
-    -- Insert into TBL_LOGIN_LOG  
-    INSERT INTO TBL_LOGIN_LOG (RollNo,UserTypeId,Username,Firstname,Lastname,groupId,Created_Date,Created_By,Modified_Date,Modified_By,RoleId)  
-    VALUES (@rollNo, @userTypeId, @username, @firstName, @lastName, @groupId, GETDATE(), @username, GETDATE(), @username,(select top 1 roleId from UserRoles where RollNo=@rollNo))  
-  END  
-  ELSE  
-  BEGIN  
-    UPDATE TBL_LOGIN_LOG SET Modified_By= @username, Modified_Date= GETDATE(),RoleId=(select top 1 roleId from UserRoles where RollNo=@rollNo) WHERE RollNo= @rollNo AND CONVERT(DATE,Created_Date)= CONVERT(DATE,GETDATE())   
-  END  
-END  
-go
-sp_helptext InValid_User_LOCK_ACCOUNT
-
-/*   Not Done   */
-  
-CREATE procedure InValid_User_LOCK_ACCOUNT  
-@USER_ID nvarchar(255)  
-as  
-begin  
- update User_Login_Details  
- set IS_LOCKED_OUT=1  
- where Employee_ID=@USER_ID  
-  
- --SELECT 'SUCCESS'    
-end
-go
-sp_helptext Get_Check_InValid_User_LOCK
-
-/*   done */
-create procedure Get_Check_InValid_User_LOCK  
-@USER_ID nvarchar(255)  
-as  
-begin  
-  
- declare @curr_time int= (SELECT DATEPART(HOUR,GETDATE())*60+DATEPART(MINUTE,GETDATE()) FROM User_Login_Details WHERE Employee_ID=@USER_ID)    
---select @curr_time as currentTime                     
-declare @last_login_time int= (SELECT DATEPART(HOUR,LAST_LOGIN_DATE)*60+DATEPART(MINUTE,LAST_LOGIN_DATE) FROM User_Login_Details WHERE Employee_ID=@USER_ID and convert(varchar,GETDATE(),101)=CONVERT(varchar,LAST_LOGIN_DATE,101) and IS_LOCKED_OUT=1)       
-               
---select @last_login_time  as Last_Login_Time    
-if(@curr_time-@last_login_time < 60)                      
-begin                       
-select '1'                      
-end                      
-end
-go
-sp_helptext Get_InValid_UserAttempt_Record
-
-
-/*  Not done     */
-create procedure Get_InValid_UserAttempt_Record  
-@USER_ID VARCHAR(255)    
-as  
-begin   
- select * from User_Login_Details where username=@USER_ID  
-
-
-
-
- Get_InValid_UserAttempt_Record
- Get_Check_InValid_User_LOCK
- InValid_User_LOCK_ACCOUNT
- insertprocedure
- UN_LOCK_ACCOUNT
- UpdateLoginTime
-
-
-
-
- LOCK_ACCOUNT
- update_login_details
- INSERT_INVALID_ENTRY
- IS_ACCOUNT_LOCKED
- check_login_details
-
- EXEC Get_InValid_UserAttempt_Record @USER_ID = 'your_username';
-
-
- drop procedure Get_InValid_UserAttempt_Record 
-
- select *from sys.procedures;
-
-
-
-CREATE TABLE UserClaims (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    RollNo NVARCHAR(450) NOT NULL,
-    ClaimType NVARCHAR(MAX) NULL,
-    ClaimValue NVARCHAR(MAX) NULL,
-    CONSTRAINT FK_UserClaims_Users FOREIGN KEY (RollNo) REFERENCES Users(Id) ON DELETE CASCADE
-);
+USE [Hidaya_DB]
+GO
+/****** Object:  User [EHTISHAMALI3]    Script Date: 5/13/2025 3:43:55 PM ******/
+CREATE USER [EHTISHAMALI3] FOR LOGIN [EHTISHAMALI3] WITH DEFAULT_SCHEMA=[dbo]
+GO
+ALTER ROLE [db_ddladmin] ADD MEMBER [EHTISHAMALI3]
+GO
+ALTER ROLE [db_datareader] ADD MEMBER [EHTISHAMALI3]
+GO
+ALTER ROLE [db_datawriter] ADD MEMBER [EHTISHAMALI3]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_BRANCHES]    Script Date: 5/13/2025 3:43:56 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_BRANCHES](
+	[BranchId] [varchar](20) NOT NULL,
+	[BranchName] [nvarchar](100) NOT NULL,
+	[BranchCode] [nvarchar](50) NULL,
+	[BranchManagerId] [varchar](20) NOT NULL,
+	[InstitutionId] [varchar](20) NOT NULL,
+	[BranchEmail] [nvarchar](255) NOT NULL,
+	[BranchPhone] [nvarchar](20) NOT NULL,
+	[BranchAddress] [nvarchar](200) NOT NULL,
+	[Street] [nvarchar](100) NULL,
+	[CityId] [varchar](13) NOT NULL,
+	[State] [nvarchar](50) NULL,
+	[PostalCode] [nvarchar](20) NULL,
+	[CountryId] [varchar](13) NOT NULL,
+	[Status] [bit] NOT NULL,
+	[CreatedBy] [nvarchar](100) NULL,
+	[CreatedAt] [datetime] NULL,
+	[ModifiedBy] [nvarchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+	[IsDeleted] [bit] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[BranchId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_BGS_HA_TBL_BRANCHES_BranchName] UNIQUE NONCLUSTERED 
+(
+	[BranchName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_CITY]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_CITY](
+	[CityInternalId] [int] IDENTITY(1,1) NOT NULL,
+	[CityId]  AS ('BGS-CTY-'+right('00000'+CONVERT([varchar](5),[CityInternalId]),(5))) PERSISTED,
+	[CityName] [nvarchar](100) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CityInternalId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_COMPOUND_LETTERS]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_COMPOUND_LETTERS](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Arabic] [nvarchar](10) NOT NULL,
+	[SvgPath] [nvarchar](max) NOT NULL,
+	[AudioPath] [nvarchar](255) NOT NULL,
+	[CreatedBy] [nvarchar](100) NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[ModifiedBy] [nvarchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+	[Deleted] [bit] NOT NULL,
+	[Urdu] [nvarchar](200) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_COUNTRY]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_COUNTRY](
+	[CountryInternalId] [int] IDENTITY(1,1) NOT NULL,
+	[CountryId]  AS ('BGS-CTR-'+right('00000'+CONVERT([varchar](5),[CountryInternalId]),(5))) PERSISTED,
+	[CountryName] [nvarchar](100) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CountryInternalId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_INDIVIDUAL_LETTERS]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_INDIVIDUAL_LETTERS](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](100) NOT NULL,
+	[Arabic] [nvarchar](10) NOT NULL,
+	[SvgPath] [nvarchar](max) NOT NULL,
+	[AudioPath] [nvarchar](255) NOT NULL,
+	[CreatedBy] [nvarchar](100) NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[ModifiedBy] [nvarchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+	[Deleted] [bit] NOT NULL,
+	[Urdu] [nvarchar](200) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_INSTITUTION]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_INSTITUTION](
+	[InstitutionId] [varchar](20) NOT NULL,
+	[InstitutionName] [nvarchar](200) NOT NULL,
+	[InstitutionEmail] [nvarchar](150) NOT NULL,
+	[InstitutionPhone] [nvarchar](20) NOT NULL,
+	[WebsiteUrl] [nvarchar](250) NULL,
+	[DateOfEstablishment] [date] NOT NULL,
+	[CountryId] [varchar](13) NOT NULL,
+	[CityId] [varchar](13) NOT NULL,
+	[InstitutionTypeId] [varchar](20) NOT NULL,
+	[State] [nvarchar](100) NULL,
+	[AddressLine] [nvarchar](300) NOT NULL,
+	[PostalCode] [nvarchar](20) NULL,
+	[PrimaryContactPerson] [nvarchar](150) NOT NULL,
+	[PrimaryContactFullName] [varchar](150) NOT NULL,
+	[PrimaryContactPhoneNumber] [nvarchar](20) NOT NULL,
+	[PrimaryContactEmail] [nvarchar](150) NOT NULL,
+	[PrimaryContactJobTitle] [nvarchar](150) NOT NULL,
+	[InstitutionStatus] [bit] NOT NULL,
+	[CreatedBy] [nvarchar](100) NULL,
+	[CreatedAt] [datetime] NULL,
+	[ModifiedBy] [nvarchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+	[IsDeleted] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[InstitutionId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[PrimaryContactPhoneNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[InstitutionPhone] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[PrimaryContactEmail] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[InstitutionName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[InstitutionEmail] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[WebsiteUrl] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_INSTITUTION_TYPES]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_INSTITUTION_TYPES](
+	[InstitutionTypeId] [varchar](20) NOT NULL,
+	[TypeName] [nvarchar](100) NOT NULL,
+	[TypeDescription] [nvarchar](255) NULL,
+	[Status] [bit] NULL,
+	[CreatedBy] [nvarchar](100) NULL,
+	[CreatedAt] [datetime] NULL,
+	[ModifiedBy] [nvarchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+	[IsDeleted] [bit] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[InstitutionTypeId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_LABS]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_LABS](
+	[LabId] [varchar](20) NOT NULL,
+	[LabName] [varchar](100) NOT NULL,
+	[BranchId] [varchar](20) NOT NULL,
+	[NumberOfSeats] [int] NOT NULL,
+	[LabEquipment] [nvarchar](max) NULL,
+	[OperationalDays] [nvarchar](100) NULL,
+	[StartTime] [time](7) NOT NULL,
+	[EndTime] [time](7) NOT NULL,
+	[LabManagerId] [varchar](13) NOT NULL,
+	[Status] [bit] NOT NULL,
+	[IsDeleted] [bit] NOT NULL,
+	[CreatedBy] [nvarchar](100) NULL,
+	[CreatedAt] [datetime] NULL,
+	[ModifiedBy] [nvarchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LabId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_USER_LOGIN_LOGS]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_USER_LOGIN_LOGS](
+	[LogId] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [varchar](20) NOT NULL,
+	[AttemptTime] [datetime] NULL,
+	[IsSuccessful] [bit] NOT NULL,
+	[FailedReason] [varchar](255) NULL,
+	[IPAddress] [varchar](50) NULL,
+	[UserAgent] [varchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[LogId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_USER_ROLES]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_USER_ROLES](
+	[RoleId] [int] IDENTITY(1,1) NOT NULL,
+	[RoleName] [varchar](50) NOT NULL,
+	[Description] [varchar](255) NOT NULL,
+	[CanView] [bit] NULL,
+	[CanAdd] [bit] NULL,
+	[CanUpdate] [bit] NULL,
+	[CanDelete] [bit] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[RoleId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_USER_TYPE]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_USER_TYPE](
+	[UserTypeId] [int] IDENTITY(1,1) NOT NULL,
+	[UserTypeName] [varchar](50) NOT NULL,
+	[Description] [varchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[UserTypeId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[UserTypeName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[BGS_HA_TBL_USERS]    Script Date: 5/13/2025 3:43:57 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[BGS_HA_TBL_USERS](
+	[UserId] [varchar](20) NOT NULL,
+	[UserTypeId] [int] NOT NULL,
+	[RoleId] [int] NOT NULL,
+	[PasswordHash] [varchar](255) NULL,
+	[UserName] [varchar](255) NULL,
+	[FirstName] [varchar](25) NOT NULL,
+	[LastName] [varchar](25) NOT NULL,
+	[Email] [varchar](255) NOT NULL,
+	[PhoneNumber] [varchar](20) NOT NULL,
+	[InstitutionId] [varchar](20) NOT NULL,
+	[BranchId] [varchar](20) NOT NULL,
+	[CityId] [varchar](20) NOT NULL,
+	[State] [varchar](100) NULL,
+	[CountryId] [varchar](20) NOT NULL,
+	[Address] [varchar](500) NULL,
+	[Designation] [varchar](100) NULL,
+	[Image] [varchar](500) NULL,
+	[Grade] [varchar](50) NULL,
+	[JoiningDate] [date] NOT NULL,
+	[RefreshTokenExpiryTime] [datetime] NULL,
+	[IsLocked] [bit] NOT NULL,
+	[FailedLoginAttempts] [int] NOT NULL,
+	[LockoutEndTime] [datetime] NULL,
+	[CreatedAt] [datetime] NOT NULL,
+	[CreatedBy] [varchar](100) NULL,
+	[ModifiedAt] [datetime] NULL,
+	[ModifiedBy] [varchar](100) NULL,
+	[Deleted] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[Email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_PhoneNumber] UNIQUE NONCLUSTERED 
+(
+	[PhoneNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 75, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_BRANCHES] ADD  DEFAULT ((1)) FOR [Status]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_BRANCHES] ADD  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_BRANCHES] ADD  DEFAULT ((0)) FOR [IsDeleted]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_COMPOUND_LETTERS] ADD  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_COMPOUND_LETTERS] ADD  DEFAULT ((0)) FOR [Deleted]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INDIVIDUAL_LETTERS] ADD  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INDIVIDUAL_LETTERS] ADD  DEFAULT ((0)) FOR [Deleted]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INSTITUTION] ADD  DEFAULT ((1)) FOR [InstitutionStatus]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INSTITUTION] ADD  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INSTITUTION] ADD  DEFAULT ((0)) FOR [IsDeleted]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INSTITUTION_TYPES] ADD  DEFAULT ((1)) FOR [Status]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INSTITUTION_TYPES] ADD  DEFAULT (getdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_INSTITUTION_TYPES] ADD  DEFAULT ((0)) FOR [IsDeleted]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_LABS] ADD  DEFAULT ((1)) FOR [Status]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_LABS] ADD  DEFAULT ((0)) FOR [IsDeleted]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USER_LOGIN_LOGS] ADD  DEFAULT (getutcdate()) FOR [AttemptTime]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USER_ROLES] ADD  DEFAULT ((0)) FOR [CanView]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USER_ROLES] ADD  DEFAULT ((0)) FOR [CanAdd]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USER_ROLES] ADD  DEFAULT ((0)) FOR [CanUpdate]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USER_ROLES] ADD  DEFAULT ((0)) FOR [CanDelete]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USERS] ADD  DEFAULT ('') FOR [BranchId]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USERS] ADD  DEFAULT ((0)) FOR [IsLocked]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USERS] ADD  DEFAULT ((0)) FOR [FailedLoginAttempts]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USERS] ADD  DEFAULT (getutcdate()) FOR [CreatedAt]
+GO
+ALTER TABLE [dbo].[BGS_HA_TBL_USERS] ADD  DEFAULT ((0)) FOR [Deleted]
+GO
